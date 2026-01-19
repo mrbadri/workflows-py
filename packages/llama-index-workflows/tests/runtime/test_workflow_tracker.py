@@ -33,33 +33,14 @@ def test_add_workflow_to_tracker() -> None:
     assert pending[0] is wf
 
 
-def test_add_workflow_with_name() -> None:
-    tracker = WorkflowTracker()
-    wf = SimpleWorkflow()
-
-    tracker.add(wf, name="my_workflow")
-
-    assert tracker.get_name(wf) == "my_workflow"
-
-
-def test_add_workflow_without_name_returns_none() -> None:
-    tracker = WorkflowTracker()
-    wf = SimpleWorkflow()
-
-    tracker.add(wf)
-
-    assert tracker.get_name(wf) is None
-
-
 def test_remove_workflow_from_tracker() -> None:
     tracker = WorkflowTracker()
     wf = SimpleWorkflow()
 
-    tracker.add(wf, name="my_workflow")
+    tracker.add(wf)
     tracker.remove(wf)
 
     assert tracker.get_pending() == []
-    assert tracker.get_name(wf) is None
 
 
 def test_remove_nonexistent_workflow_is_safe() -> None:
@@ -121,7 +102,7 @@ def test_clear_resets_all_state() -> None:
     tracker = WorkflowTracker()
     wf = SimpleWorkflow()
 
-    tracker.add(wf, name="my_workflow")
+    tracker.add(wf)
     tracker.mark_launched()
 
     async def mock_control_loop(
@@ -138,7 +119,6 @@ def test_clear_resets_all_state() -> None:
     tracker.clear()
 
     assert tracker.get_pending() == []
-    assert tracker.get_name(wf) is None
     assert tracker.get_registered(wf) is None
     assert tracker.is_launched is False
 
@@ -167,7 +147,7 @@ def test_clear_releases_references() -> None:
     wf = SimpleWorkflow()
     w = weakref.ref(wf)
 
-    tracker.add(wf, name="my_workflow")
+    tracker.add(wf)
     del wf
     gc.collect()
 
@@ -187,12 +167,10 @@ def test_multiple_workflows_tracked_independently() -> None:
     wf1 = SimpleWorkflow()
     wf2 = SimpleWorkflow()
 
-    tracker.add(wf1, name="workflow_1")
-    tracker.add(wf2, name="workflow_2")
+    tracker.add(wf1)
+    tracker.add(wf2)
 
     assert len(tracker.get_pending()) == 2
-    assert tracker.get_name(wf1) == "workflow_1"
-    assert tracker.get_name(wf2) == "workflow_2"
 
 
 def test_add_same_workflow_twice_is_idempotent() -> None:
@@ -200,10 +178,8 @@ def test_add_same_workflow_twice_is_idempotent() -> None:
     tracker = WorkflowTracker()
     wf = SimpleWorkflow()
 
-    tracker.add(wf, name="my_workflow")
-    tracker.add(wf, name="updated_name")  # Second add with different name
+    tracker.add(wf)
+    tracker.add(wf)  # Second add
 
     # Should only be one workflow
     assert len(tracker.get_pending()) == 1
-    # Name should be updated
-    assert tracker.get_name(wf) == "updated_name"

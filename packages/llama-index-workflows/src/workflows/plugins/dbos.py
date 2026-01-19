@@ -69,13 +69,10 @@ class DBOSRuntime(Runtime):
         Wrap workflow with DBOS decorators.
 
         Called at launch() time for each tracked workflow.
-        Uses stable names based on workflow class and assigned name.
+        Uses workflow.name for stable DBOS registration names.
         """
-        # Compute stable name for DBOS registration
-        name = self._tracker.get_name(workflow)
-        if name is None:
-            # Generate name from class if not explicitly set
-            name = workflow.__class__.__name__
+        # Use workflow's name directly
+        name = workflow.name
 
         # Create DBOS-wrapped control loop with stable name
         @DBOS.workflow(name=f"{name}.control_loop")

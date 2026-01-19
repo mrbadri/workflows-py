@@ -22,13 +22,11 @@ class WorkflowTracker:
         # Workflows registered before launch (strong refs to survive GC)
         self._pending: list[Workflow] = []
         self._pending_set: set[int] = set()  # Track by id for dedup
-        # Names assigned to workflows (for stable DBOS registration)
-        self._names: dict[int, str] = {}  # keyed by id(workflow)
         # Registered workflows after launch (control loop + steps)
         self._registered: dict[int, RegisteredWorkflow] = {}  # keyed by id(workflow)
         self._launched: bool = False
 
-    def add(self, workflow: Workflow, name: str | None = None) -> None:
+    def add(self, workflow: Workflow) -> None:
         """Add a workflow to be registered at launch time."""
         if self._launched:
             raise RuntimeError(
@@ -39,19 +37,12 @@ class WorkflowTracker:
         if wf_id not in self._pending_set:
             self._pending.append(workflow)
             self._pending_set.add(wf_id)
-        if name is not None:
-            self._names[wf_id] = name
 
     def remove(self, workflow: Workflow) -> None:
         """Remove a workflow from pending registration."""
         wf_id = id(workflow)
         self._pending = [wf for wf in self._pending if id(wf) != wf_id]
         self._pending_set.discard(wf_id)
-        self._names.pop(wf_id, None)
-
-    def get_name(self, workflow: Workflow) -> str | None:
-        """Get the assigned name for a workflow, if any."""
-        return self._names.get(id(workflow))
 
     def get_pending(self) -> list[Workflow]:
         """Get all pending workflows."""
@@ -80,6 +71,5 @@ class WorkflowTracker:
         """Clear all tracking state (for destroy())."""
         self._pending.clear()
         self._pending_set.clear()
-        self._names.clear()
         self._registered.clear()
         self._launched = False
